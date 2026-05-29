@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import folium
 from streamlit_folium import st_folium
 import base64
@@ -378,8 +378,166 @@ with tab_explora:
             tooltip=wp["name"],
             icon=folium.Icon(color=icon_color, icon="info-sign")
         ).add_to(mapa)
-        
-    st_folium(mapa, width=410, height=270, key=f"map_{route['id']}")
+
+    # INYECCIÓN JAVASCRIPT DE GEOLOCALIZACIÓN Y SEGUIMIENTO REAL EN LEAFLET
+    gps_tracking_script = """
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            // Encontrar la instancia de Leaflet Map de Folium
+            var maps = [];
+            for (var key in window) {
+                if (key.indexOf("map_") === 0 && window[key] instanceof L.Map) {
+                    maps.push(window[key]);
+                }
+            }
+            if (maps.length === 0) return;
+            var map = maps[0];
+
+            // Crear capa para dibujar el recorrido del usuario (Polyline verde)
+            var walkPoints = [];
+            var walkPolyline = L.polyline(walkPoints, {
+                color: '#22c55e', // Verde brillante de Aigües Activa
+                weight: 6,
+                opacity: 0.9,
+                dashArray: '5, 8'
+            }).addTo(map);
+
+            var userDot = null;
+            var userAccuracyCircle = null;
+            var watchId = null;
+            var isTracking = false;
+
+            // Inyectar botón de Geolocalización Real en la barra de Leaflet
+            var GpsControl = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd: function (map) {
+                    var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-gps-control');
+                    container.style.backgroundColor = '#15803d';
+                    container.style.color = '#ffffff';
+                    container.style.width = '34px';
+                    container.style.height = '34px';
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    container.style.borderRadius = '6px';
+                    container.style.cursor = 'pointer';
+                    container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.5)';
+                    container.innerHTML = '🛰️';
+                    container.title = 'Activar GPS Real y Seguir Ruta';
+
+                    container.onclick = function(e) {
+                        e.stopPropagation();
+                        if (!isTracking) {
+                            startGpsTracking();
+                        } else {
+                            stopGpsTracking();
+                        }
+                    };
+                    return container;
+                }
+            });
+            map.addControl(new GpsControl());
+
+            function startGpsTracking() {
+                if (!navigator.geolocation) {
+                    alert("⚠️ CONTEXTO INSEGURO (HTTP): Los navegadores móviles bloquean el GPS por seguridad en enlaces HTTP ordinarios.\n\nPara probar el GPS real en tu móvil de inmediato, tienes dos opciones:\n1. Sube la app a Streamlit Cloud (¡es gratis y automático con HTTPS!)\n2. O bien, accede desde tu ordenador con localhost.\n\nMientras tanto, puedes usar la pestaña 'Pasaporte' para simular el GPS.");
+                    return;
+                }
+                
+                isTracking = true;
+                var btn = document.querySelector('.leaflet-gps-control');
+                if (btn) {
+                    btn.style.backgroundColor = '#ef4444'; // Cambiar a rojo (Activo)
+                    btn.title = 'Detener GPS Real';
+                    btn.innerHTML = '🛑';
+                }
+
+                watchId = navigator.geolocation.watchPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    var acc = position.coords.accuracy;
+                    var currentPos = [lat, lng];
+
+                    // Añadir coordenada a la traza y actualizar línea verde
+                    walkPoints.push(currentPos);
+                    walkPolyline.setLatLngs(walkPoints);
+
+                    // Posicionar marcador circular del usuario
+                    if (!userDot) {
+                        userDot = L.circleMarker(currentPos, {
+                            color: '#15803d',
+                            fillColor: '#22c55e',
+                            fillOpacity: 0.9,
+                            radius: 8,
+                            weight: 3
+                        }).addTo(map);
+                        
+                        userAccuracyCircle = L.circle(currentPos, {
+                            radius: acc,
+                            color: '#22c55e',
+                            fillColor: '#22c55e',
+                            fillOpacity: 0.15,
+                            weight: 1
+                        }).addTo(map);
+                    } else {
+                        userDot.setLatLng(currentPos);
+                        userAccuracyCircle.setLatLng(currentPos);
+                        userAccuracyCircle.setRadius(acc);
+                    }
+
+                    // Seguir y centrar el mapa suavemente en la posición del caminante
+                    map.setView(currentPos, 16);
+                }, function(error) {
+                    console.error("Error capturando señal GPS:", error);
+                    if (error.code === 1) { // PERMISSION_DENIED
+                        alert("⚠️ Permiso de Ubicación Denegado: Por favor, activa el permiso de GPS en los ajustes de tu navegador para esta página.");
+                    } else {
+                        alert("⚠️ Error del GPS móvil (Código " + error.code + "): Asegúrate de estar al aire libre con buena visibilidad de satélites.");
+                    }
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 10000
+                });
+            }
+
+            function stopGpsTracking() {
+                isTracking = false;
+                var btn = document.querySelector('.leaflet-gps-control');
+                if (btn) {
+                    btn.style.backgroundColor = '#15803d';
+                    btn.title = 'Activar GPS Real y Seguir Ruta';
+                    btn.innerHTML = '🛰️';
+                }
+                
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                if (userDot) {
+                    map.removeLayer(userDot);
+                    userDot = null;
+                }
+                if (userAccuracyCircle) {
+                    map.removeLayer(userAccuracyCircle);
+                    userAccuracyCircle = null;
+                }
+            }
+
+            // AUTO-INICIAR GEOLOCALIZACIÓN AL CARGAR
+            setTimeout(function() {
+                startGpsTracking();
+            }, 100);
+            
+        }, 1500); // Pequeño retraso para asegurar carga del DOM de Leaflet
+    });
+    </script>
+    """
+    mapa.get_root().html.add_child(folium.Element(gps_tracking_script))
+    
+    # RENDERIZAR MAPA COMO HTML REAL PARA SOPORTAR INYECCIÓN JAVASCRIPT DE GEOLOCALIZACIÓN
+    st.components.v1.html(mapa._repr_html_(), height=320)
     
     # Alertas específicas de la ruta
     if "cova" in route["id"]:
@@ -565,8 +723,38 @@ with tab_sos:
 # ================= TAB EVENTOS =================
 with tab_eventos:
     st.write("### 📅 Agenda Cultural y Eventos")
-    st.write("Mantente al día con los conciertos, obras de teatro y actividades al aire libre organizadas por el Ayuntamiento de Aigües.")
+    st.write("Mantente al día con los conciertos, exposiciones y actividades culturales organizadas por el Ayuntamiento de Aigües.")
     
+    # NUEVO EVENTO: EXPOSICIÓN DE PINTURA (PRIMER EVENTO WEB OFICIAL)
+    st.markdown("""
+    <div class='ticket-container' style='border: 1px solid rgba(255, 255, 255, 0.1);'>
+        <div class='ticket-header'>
+            <span style='font-weight:700; color:#eab308;'>🎨 José Manuel Cámara</span>
+            <span style='background:#ec4899; color:white; font-size:0.75rem; padding:2px 8px; border-radius:10px; font-weight:700;'>EXPOSICIÓN</span>
+        </div>
+        <p style='margin:0.5rem 0; font-size:0.95rem; font-weight:600; color:#f1f5f9;'>Exposición de Pintura «por Dibujo Alicante»</p>
+        <p style='font-size:0.85rem; color:#cbd5e1; margin-bottom:0.8rem;'>
+            Una magnífica colección artística de ilustraciones y dibujos al aire libre que capturan rincones y paisajes urbanos emblemáticos de la provincia de Alicante.
+        </p>
+        <p style='font-size:0.8rem; color:#94a3b8; margin: 3px 0;'><b>📍 Ubicación:</b> Excmo. Ayuntamiento de Aigües (Calle Mayor 5, Entrada Libre)</p>
+        <p style='font-size:0.8rem; color:#94a3b8; margin: 3px 0;'><b>⏰ Fechas:</b> Del 22 de Mayo al 10 de Junio de 2026</p>
+        <p style='font-size:0.8rem; color:#94a3b8; margin: 3px 0;'><b>⏰ Horario de visitas:</b> Lunes a Viernes de 09:00h a 14:00h</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Renderizar el cartel de la exposición
+    st.image(
+        "https://www.aigues.es/wp-content/uploads/2026/05/Exposicion-por-Dibujo-Alicante.jpg", 
+        use_column_width=True, 
+        caption="Cartel Oficial de la Exposición - Ayuntamiento de Aigües"
+    )
+    
+    if st.button("🔔 Recordar Exposición", key="exposicion_btn"):
+        st.success("¡Recordatorio añadido con éxito! 🗓️ Recibirás un aviso en tu móvil para asistir a la exposición en el Ayuntamiento.")
+        
+    st.write("---")
+    
+    # EVENTO EXISTENTE ACTUALIZADO CON SU FECHA REAL DE LA WEB
     st.markdown("""
     <div class='ticket-container' style='border: 1px solid rgba(255, 255, 255, 0.1);'>
         <div class='ticket-header'>
@@ -577,8 +765,8 @@ with tab_eventos:
         <p style='font-size:0.85rem; color:#cbd5e1; margin-bottom:0.8rem;'>
             Disfruta de una noche estival única bajo las estrellas de Aigües con el mejor jazz clásico y tradicional en directo.
         </p>
-        <p style='font-size:0.8rem; color:#94a3b8; margin: 3px 0;'><b>📍 Ubicación:</b> Auditorio de la Casa de Cultura (Entrada Gratuita)</p>
-        <p style='font-size:0.8rem; color:#94a3b8; margin: 3px 0;'><b>⏰ Horario:</b> Sábado, 13 de Junio de 2026 a las 20:30h</p>
+        <p style='font-size:0.8rem; color:#94a3b8; margin: 3px 0;'><b>📍 Ubicación:</b> Jardín de la Casa de Cultura (Entrada Gratuita)</p>
+        <p style='font-size:0.8rem; color:#94a3b8; margin: 3px 0;'><b>⏰ Horario:</b> Sábado, 30 de Mayo de 2026 a las 20:00h</p>
     </div>
     """, unsafe_allow_html=True)
     
