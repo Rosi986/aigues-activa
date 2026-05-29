@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adam's Car Parking | Parking Aeropuerto Alicante</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0A2540;
+            --primary-light: #183C64;
+            --accent: #FF6B00;
+            --accent-hover: #E55F00;
+            --bg-light: #F8F9FA;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --white: #FFFFFF;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            color: var(--text-main);
+            background-color: var(--white);
+            line-height: 1.6;
+        }
+
+        /* Reusable Classes (Tailwind-like utility) */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        .text-center { text-align: center; }
+        .section-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            letter-spacing: -0.02em;
+        }
+        .btn {
+            display: inline-block;
+            background-color: var(--accent);
+            color: var(--white);
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            text-align: center;
+        }
+        .btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 107, 0, 0.2);
+        }
+        .btn.btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+        }
+        .btn.btn-outline:hover {
+            background-color: var(--accent);
+            color: var(--white);
+        }
+
+        /* Header */
+        header {
+            background-color: var(--white);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .logo span {
+            color: var(--accent);
+        }
+        .nav-links {
+            display: none;
+            gap: 2rem;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+        /* Mobile menu icon (visual only) */
+        .mobile-menu-btn {
+            display: block;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        @media(min-width: 768px) {
+            .nav-links { display: flex; align-items: center; }
+            .mobile-menu-btn { display: none; }
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: var(--white);
+            padding: 6rem 0 5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            margin-bottom: 2.5rem;
+            font-weight: 300;
+        }
+        .hero-btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Info Banner */
+        .info-banner {
+            background-color: var(--white);
+            box-shadow: 0 -20px 40px rgba(0,0,0,0.05);
+            border-radius: var(--radius-md);
+            margin: -3rem 1.5rem 0;
+            position: relative;
+            z-index: 10;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        @media(min-width: 768px) {
+            .info-banner {
+                margin: -3rem auto 0;
+                max-width: 1000px;
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        .info-item {
+            text-align: center;
+        }
+        .info-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .info-item h4 {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .info-item p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* How it works */
+        .how-it-works {
+            padding: 6rem 0;
+            background-color: var(--bg-light);
+        }
+        .steps-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+        @media(min-width: 768px) {
+            .steps-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        .step-card {
+            background: var(--white);
+            padding: 2.5rem 2rem;
+            border-radius: var(--radius-md);
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            position: relative;
+            transition: transform 0.3s;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+        }
+        .step-number {
+            background-color: var(--primary);
+            color: var(--white);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+        .step-number::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            top: -6px;
+            left: -6px;
+            padding: 4px;
+        }
+
+        /* Reservation Mockup Section */
+        .reservation {
+            padding: 6rem 0;
+        }
+        .reservation-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4rem;
+        }
+        @media(min-width: 992px) {
+            .reservation-wrapper { grid-template-columns: 1fr 1fr; align-items: start; }
+        }
+        .reservation-info h3 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        .reservation-info ul {
+            list-style: none;
+            margin-top: 2rem;
+        }
+        .reservation-info li {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        .reservation-info li::before {
+            content: '✓';
+            color: #10B981;
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+        }
+        .form-mockup {
+            background-color: var(--white);
+            border: 1px solid #E5E7EB;
+            border-radius: var(--radius-md);
+            padding: 2.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+        .form-mockup h4 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            text-align: center;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        @media(min-width: 768px) {
+            .form-row { grid-template-columns: 1fr 1fr; }
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select {
+            padding: 0.8rem 1rem;
+            border: 1px solid #D1D5DB;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 1rem;
+            background-color: var(--bg-light);
+        }
+        .form-group input:focus {
+            outline: 2px solid var(--accent);
+            border-color: transparent;
+        }
+
+        /* Final CTA */
+        .cta-final {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 5rem 0;
+            text-align: center;
+        }
+        .cta-final h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #051320;
+            color: #9CA3AF;
+            padding: 4rem 0 2rem;
+            text-align: center;
+        }
+        footer p {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-wrapper">
+            <a href="#" class="logo">Adam's<span>Parking</span></a>
+            <button class="mobile-menu-btn">☰</button>
+            <nav class="nav-links">
+                <a href="#">Inicio</a>
+                <a href="#">Cómo llegar</a>
+                <a href="#">Precios</a>
+                <a href="#">Contacto</a>
+                <a href="#" class="btn" style="padding: 0.5rem 1.5rem; font-size: 1rem;">Reservar</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container hero-content">
+            <h1>Tu coche seguro, tu viaje tranquilo</h1>
+            <p>Aparcamiento privado a 3 minutos del Aeropuerto Alicante-Elche. Servicio Meet & Greet, precios competitivos y vigilancia 24/7.</p>
+            <div class="hero-btn-group">
+                <a href="#reservar" class="btn">Reservar plaza ahora</a>
+                <a href="#" class="btn btn-outline" style="color:white; border-color:white;">Ver Tarifas</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="info-banner">
+        <div class="info-item">
+            <div class="info-icon">✈️</div>
+            <h4>A un paso de la Terminal</h4>
+            <p>Junto al Aeropuerto de Alicante</p>
+        </div>
+        <div class="info-item">
+            <div class="info-icon">🕒</div>
+            <h4>Abierto 24/7</h4>
+            <p>Flexibilidad total en tus vuelos</p>
+        </div>
+        <div class="info-item">
+            <div class="info-icon">🛡️</div>
+            <h4>Máxima Seguridad</h4>
+            <p>Vigilancia en recinto privado</p>
+        </div>
+        <div class="info-item">
+            <div class="info-icon">💶</div>
+            <h4>Mejor Precio</h4>
+            <p>Tarifas desde 329€ al año</p>
+        </div>
+    </div>
+
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title text-center">Cómo funciona nuestro servicio</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3 style="margin-bottom: 1rem;">Reserva Online</h3>
+                    <p>Asegura tu plaza de parking en menos de 2 minutos indicando tus fechas de vuelo y los datos de tu vehículo.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3 style="margin-bottom: 1rem;">Dejas el coche</h3>
+                    <p>Entrega rápida. Puedes venir al parking o solicitar que recojamos tu coche directamente en "Departures" (Meet & Greet).</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3 style="margin-bottom: 1rem;">Regreso feliz</h3>
+                    <p>A tu vuelta, tu coche estará listo para que te lo lleves. Si reservas larga estancia, te lo entregamos limpio.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="reservar" class="reservation">
+        <div class="container">
+            <div class="reservation-wrapper">
+                <div class="reservation-info">
+                    <h2 class="section-title">Reserva tu plaza</h2>
+                    <p>Rellena el formulario para calcular el precio exacto de tu estancia. Una vez confirmados los datos, podrás realizar el pago de forma segura a través de nuestra pasarela.</p>
+                    
+                    <ul>
+                        <li>Sin costes ocultos, precio transparente.</li>
+                        <li>Más económico que el parking oficial del aeropuerto.</li>
+                        <li>Servicio de Meet & Greet incluido en nuestras tarifas.</li>
+                        <li>Asistencia mecánica e ITV opcionales.</li>
+                    </ul>
+                </div>
+                
+                <div class="form-mockup">
+                    <h4>Ejemplo Sistema de Reservas WordPress</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombre y Apellidos</label>
+                            <input type="text" placeholder="Ej: Laura García">
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono (WhatsApp)</label>
+                            <input type="tel" placeholder="+34 600..." value="+34 ">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label>Email</label>
+                        <input type="email" placeholder="tu@correo.com">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Matrícula</label>
+                            <input type="text" placeholder="0000 ABC">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo de coche</label>
+                            <input type="text" placeholder="Ej: Seat Leon">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fecha / Hora Entrada</label>
+                            <input type="datetime-local">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha / Hora Salida</label>
+                            <input type="datetime-local">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label>Número de vuelo regreso (Opcional)</label>
+                        <input type="text" placeholder="Ej: FR1234">
+                    </div>
+
+                    <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 1rem;">
+                        (Al continuar serás redirigido a la pasarela de pago seguro)
+                    </p>
+
+                    <button class="btn" style="width: 100%;">Continuar y Pagar</button>
+                    
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-final">
+        <div class="container">
+            <h2>¿Listo para dejar tu coche en buenas manos?</h2>
+            <a href="#reservar" class="btn" style="background-color: var(--white); color: var(--primary);">Reservar mi plaza ahora</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <h3 style="color: var(--white); margin-bottom: 1rem;">Adam's Car Parking</h3>
+            <p>Cerca del Aeropuerto de Alicante-Elche, España.</p>
+            <p>Tel/WhatsApp: <a href="wa.me/34652409431" style="color: var(--accent); text-decoration: none;">652 40 94 31</a> | Email: adamscarparking@gmail.com</p>
+            <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.5;">© 2026 Adam's Car Parking. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
